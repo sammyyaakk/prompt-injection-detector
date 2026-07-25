@@ -111,6 +111,6 @@ streamlit run app.py
 ## References
 
 - [OWASP Top 10 for LLM Applications — LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
-- Perez, F. & Ribeiro, I. (2022). *Ignore This Title and HackAPrompt: Exposing Systemic Vulnerabilities of LLMs.* — early formal treatment of prompt injection attack techniques.
+- Perez, F. & Ribeiro, I. (2022). *Ignore Previous Prompt: Attack Techniques For Language Models.* arXiv:2211.09527 — one of the earliest formal treatments of prompt injection attack techniques.
 - [ProtectAI `deberta-v3-base-prompt-injection-v2`](https://huggingface.co/protectai/deberta-v3-base-prompt-injection-v2) — an example of a fine-tuned transformer approach to this same problem, for comparison against the simpler baselines here.
 - [`deepset/prompt-injections`](https://huggingface.co/datasets/deepset/prompt-injections) and [`jackhhao/jailbreak-classification`](https://huggingface.co/datasets/jackhhao/jailbreak-classification) — the two source datasets.
