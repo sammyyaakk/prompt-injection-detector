@@ -6,7 +6,7 @@ Comparing a TF-IDF baseline against a sentence-embedding classifier for detectin
 
 ## Live demo
 
-Coming soon — HF Spaces deployment in progress.
+**[Try it live](https://prompt-injection-detector-hbw23eytztkg8by5wgg8fu.streamlit.app/)** — Streamlit Community Cloud (free tier; first load after inactivity may take ~30s to spin back up).
 
 ## Problem
 
