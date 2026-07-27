@@ -1,13 +1,18 @@
 import pandas as pd
 import joblib
+import torch
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from src.data_loader import load_splits
 from src.features import get_embeddings
 
 MODELS_DIR = "models"
+DISTILBERT_DIR = "models/distilbert"
 HOLDOUT_PATH = "data/holdout/handcrafted.csv"
+DISTILBERT_MAX_LENGTH = 128
+DISTILBERT_BATCH_SIZE = 32
 
 
 def _false_positive_rate(y_true, y_pred):
@@ -36,6 +41,28 @@ def evaluate_embedding(clf, df):
     return _score(df["label"], preds)
 
 
+def load_distilbert():
+    tokenizer = AutoTokenizer.from_pretrained(DISTILBERT_DIR)
+    model = AutoModelForSequenceClassification.from_pretrained(DISTILBERT_DIR)
+    model.eval()
+    return tokenizer, model
+
+
+def evaluate_distilbert(tokenizer, model, df):
+    texts = df["text"].tolist()
+    preds = []
+    with torch.no_grad():
+        for i in range(0, len(texts), DISTILBERT_BATCH_SIZE):
+            batch = texts[i:i + DISTILBERT_BATCH_SIZE]
+            inputs = tokenizer(
+                batch, truncation=True, padding=True,
+                max_length=DISTILBERT_MAX_LENGTH, return_tensors="pt",
+            )
+            logits = model(**inputs).logits
+            preds.extend(torch.argmax(logits, dim=-1).tolist())
+    return _score(df["label"], preds)
+
+
 def cross_validate_tfidf(pipeline, train_df):
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     scores = cross_val_score(pipeline, train_df["text"], train_df["label"], cv=cv, scoring="f1")
@@ -49,11 +76,14 @@ def cross_validate_embedding(clf, train_df):
     return scores.mean(), scores.std()
 
 
-def _print_report(name, test_scores, holdout_scores, cv_mean, cv_std):
+def _print_report(name, test_scores, holdout_scores, cv_mean=None, cv_std=None):
     print(name)
     print(f"  test:    {test_scores}")
     print(f"  holdout: {holdout_scores}")
-    print(f"  5-fold CV F1: {cv_mean:.3f} +/- {cv_std:.3f}")
+    if cv_mean is not None:
+        print(f"  5-fold CV F1: {cv_mean:.3f} +/- {cv_std:.3f}")
+    else:
+        print("  5-fold CV F1: skipped (retraining DistilBERT 5x on CPU is too expensive)")
 
 
 def main():
@@ -77,6 +107,13 @@ def main():
         evaluate_embedding(embed_clf, test_df),
         evaluate_embedding(embed_clf, holdout_df),
         embed_cv_mean, embed_cv_std,
+    )
+
+    distilbert_tokenizer, distilbert_model = load_distilbert()
+    _print_report(
+        "DistilBERT",
+        evaluate_distilbert(distilbert_tokenizer, distilbert_model, test_df),
+        evaluate_distilbert(distilbert_tokenizer, distilbert_model, holdout_df),
     )
 
 
