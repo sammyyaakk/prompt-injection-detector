@@ -2,6 +2,8 @@
 
 This is a follow-up to the main [README](README.md) results, testing how much each of the three classifiers' recall degrades under six common evasion techniques. It answers a question the README's Limitations section raised but didn't quantify: *how* fragile is "neither model is adversarially robust," exactly?
 
+See also: [`results/threshold_analysis.md`](results/threshold_analysis.md) — a separate follow-up sweeping each model's decision threshold on the (unperturbed) test set to find precision/recall operating points, including precision-recall curves in [`results/pr_curves.png`](results/pr_curves.png). That analysis is orthogonal to this one: it's tuned on in-distribution data and doesn't address the evasion techniques covered here.
+
 ## Method
 
 - **Target set:** the 12 injection examples (label = 1) from the 24-example hand-crafted holdout set (`data/holdout/handcrafted.csv`). Benign examples are excluded — the question here is evasion (getting a real injection past the filter), not false positives.

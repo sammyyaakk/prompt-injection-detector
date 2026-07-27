@@ -58,6 +58,8 @@ TF-IDF leads on in-distribution metrics (test set, cross-validation) among the t
 
 **Reading this:** TF-IDF is pattern-matching surface phrasing well, but that's also its failure mode — it doesn't generalize past wording it's seen before. DistilBERT's extra capacity clearly helps it fit the training distribution better than either linear model, but that same capacity lets it fit training-specific surface patterns too, and with only ~1,100 training examples it doesn't have enough data to learn a more robust decision boundary than the frozen, pretrained MiniLM embeddings already provide. The embedding model, capturing semantic similarity rather than literal n-grams or a fitted decision boundary, still catches the most reworded attacks it was never trained on. The holdout set is only 24 examples, so these numbers should be read as directional evidence of a real effect, not precise estimates — a single flipped prediction moves holdout recall by roughly 8 points.
 
+All the numbers above use each model's default 0.5 decision threshold. See [`results/threshold_analysis.md`](results/threshold_analysis.md) for a sweep across thresholds on the test set, precision-recall curves ([`results/pr_curves.png`](results/pr_curves.png)), and recommended thresholds for high-recall vs. high-precision deployments.
+
 ## Architecture
 
 See [`docs/architecture.md`](docs/architecture.md) for the diagram and design notes.

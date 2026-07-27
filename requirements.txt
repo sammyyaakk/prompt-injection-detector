@@ -13,3 +13,4 @@ torch~=2.13
 transformers~=4.57
 accelerate~=1.14
 nltk~=3.10
+matplotlib~=3.11
