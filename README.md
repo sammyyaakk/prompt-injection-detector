@@ -8,6 +8,13 @@ Comparing a TF-IDF baseline against a sentence-embedding classifier for detectin
 
 **[Try it live](https://prompt-injection-detector-hbw23eytztkg8by5wgg8fu.streamlit.app/)** — Streamlit Community Cloud (free tier; first load after inactivity may take ~30s to spin back up).
 
+## Full study
+
+**[STUDY.md](STUDY.md)** consolidates all four analyses in this repo — main model comparison, adversarial
+robustness, error taxonomy, and threshold/calibration — into one report, with motivation, related work, and
+a single limitations/future-work section. Start there for the complete picture; this README covers the main
+comparison only.
+
 ## Problem
 
 Prompt injection is when adversarial input causes an LLM to ignore its original instructions and follow the attacker's instead. OWASP has ranked it the top security risk for LLM applications for two consecutive years, and it's a hard problem specifically because LLMs process instructions and untrusted data through the same channel — there's no built-in way for the model to tell "system instruction" apart from "user-supplied text that happens to look like an instruction." This project treats it as a binary text classification problem: given a prompt, is it a legitimate instruction/query or an injection attempt?
