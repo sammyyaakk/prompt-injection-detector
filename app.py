@@ -5,12 +5,18 @@ from src.predict import predict
 st.set_page_config(page_title="Prompt Injection Detector", page_icon="🛡️")
 
 st.title("Prompt Injection Detector")
-st.caption("Educational project comparing TF-IDF and sentence-embedding classifiers. Not a production security tool.")
+st.caption("Educational project comparing TF-IDF, sentence-embedding, and DistilBERT classifiers. Not a production security tool.")
+
+MODEL_LABELS = {
+    "embedding": "Embeddings + Logistic Regression",
+    "tfidf": "TF-IDF + Logistic Regression",
+    "distilbert": "Fine-tuned DistilBERT",
+}
 
 model_choice = st.radio(
     "Model",
-    options=["embedding", "tfidf"],
-    format_func=lambda m: "Embeddings + Logistic Regression" if m == "embedding" else "TF-IDF + Logistic Regression",
+    options=["embedding", "tfidf", "distilbert"],
+    format_func=lambda m: MODEL_LABELS[m],
     horizontal=True,
 )
 
@@ -30,14 +36,17 @@ if st.button("Check", type="primary") and text_input.strip():
         st.success(f"✅ Looks benign ({result['confidence']:.1%} confidence)")
 
     st.divider()
-    st.subheader("Try both models")
-    other_model = "tfidf" if model_choice == "embedding" else "embedding"
-    other_result = predict(text_input, model=other_model)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(model_choice, result["label"], f"{result['confidence']:.1%}")
-    with col2:
-        st.metric(other_model, other_result["label"], f"{other_result['confidence']:.1%}")
+    st.subheader("Compare all models")
+    other_models = [m for m in MODEL_LABELS if m != model_choice]
+    with st.spinner("Running inference..."):
+        other_results = [predict(text_input, model=m) for m in other_models]
+
+    cols = st.columns(3)
+    with cols[0]:
+        st.metric(MODEL_LABELS[model_choice], result["label"], f"{result['confidence']:.1%}")
+    for col, m, other_result in zip(cols[1:], other_models, other_results):
+        with col:
+            st.metric(MODEL_LABELS[m], other_result["label"], f"{other_result['confidence']:.1%}")
 
 st.divider()
 st.caption("Trained on ~1,600 examples from deepset/prompt-injections and jackhhao/jailbreak-classification. See the [GitHub repo](https://github.com/sammyyaakk/prompt-injection-detector) for methodology and limitations.")
