@@ -67,6 +67,32 @@ TF-IDF leads on in-distribution metrics (test set, cross-validation) among the t
 
 All the numbers above use each model's default 0.5 decision threshold. See [`results/threshold_analysis.md`](results/threshold_analysis.md) for a sweep across thresholds on the test set, precision-recall curves ([`results/pr_curves.png`](results/pr_curves.png)), and recommended thresholds for high-recall vs. high-precision deployments.
 
+## Indirect injection (pilot)
+
+A first, small-scale step from classifying single prompts to classifying documents. It follows the indirect threat model of Greshake et al. (2023): the attacker controls retrieved content, and the detector screens that content before it reaches the LLM. This is a pilot; read its numbers as directional.
+
+**Benchmark.** [`data/indirect_pilot/indirect_pilot.csv`](data/indirect_pilot/indirect_pilot.csv) holds 276 documents built by `scripts/build_indirect_pilot.py` (seed 42). 88 injection prompts and 138 benign prompts, taken only from the test split and the hand-crafted holdout (never `train.csv`), are embedded at the start, middle or end of short Wikipedia paragraphs from the SQuAD validation set, plus 50 unmodified paragraphs. Documents are capped at 400 DistilBERT tokens, so 32 of the 120 available injections (mostly long DAN-style jailbreaks) did not fit and were left out.
+
+**Results.** The existing models, with no retraining, at threshold 0.5 (DistilBERT reads up to 512 tokens here):
+
+| Metric | TF-IDF + LR | MiniLM + LR | DistilBERT |
+|---|---|---|---|
+| Recall: the same 88 injections on their own | 0.773 | 0.784 | 0.852 |
+| Recall: injection embedded in a paragraph | 0.511 | 0.477 | 0.477 |
+| Precision | 0.938 | 0.913 | 0.933 |
+| False positive rate | 0.016 | 0.021 | 0.016 |
+| Recall: embedded injection base64-encoded | 0.000 | 0.045 | 0.000 |
+
+Hiding an injection inside an ordinary paragraph cuts recall by 0.26–0.38 while precision stays high: the surrounding benign text pulls scores toward "benign" rather than causing false alarms. Base64-encoding only the injected span still bypasses all three models. Per-position recall, false-positive rates by document type and caveats are in [`results/indirect_pilot.md`](results/indirect_pilot.md), with a chart in [`results/indirect_pilot_chart.png`](results/indirect_pilot_chart.png). Word-level TF-IDF explanations are in [`results/explain_examples.html`](results/explain_examples.html), and related work is summarised in [`docs/lit_review_table.md`](docs/lit_review_table.md).
+
+**Run it:**
+```bash
+python -m scripts.build_indirect_pilot   # downloads SQuAD validation (~2 MB) into data/raw/ (gitignored) and rebuilds the pilot
+python -m scripts.eval_indirect_pilot    # scores all three models; needs models/distilbert/ (see Usage)
+python -m scripts.explain_tfidf          # top TF-IDF terms and word-level explanations
+python demo.py                           # offline live demo: clean vs. hidden vs. base64-encoded injection
+```
+
 ## Architecture
 
 See [`docs/architecture.md`](docs/architecture.md) for the diagram and design notes.
