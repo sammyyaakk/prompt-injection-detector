@@ -12,11 +12,11 @@ def get_embedder():
     return _EMBEDDER
 
 
-def get_embeddings(texts):
+def get_embeddings(texts, show_progress_bar=True):
     embedder = get_embedder()
     return embedder.encode(
         list(texts),
         batch_size=32,
-        show_progress_bar=True,
+        show_progress_bar=show_progress_bar,
         convert_to_numpy=True
     )
