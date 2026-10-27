@@ -35,3 +35,19 @@ models/distilbert_checkpoints/
 .claude/
 CLAUDE.md
 .anthropic/
+# HuggingFace dataset and model caches
+.cache/huggingface/
+huggingface/
+hf_cache/
+*.arrow
+# Large downloaded files
+nltk_data/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.parquet
+*.zip
+*.tar.gz
