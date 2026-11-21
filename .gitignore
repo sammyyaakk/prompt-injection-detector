@@ -29,6 +29,7 @@ data/raw/*
 # Fine-tuned DistilBERT weights - ~256MB, too large to commit.
 # Regenerate with: python -m src.models.distilbert_classifier
 models/distilbert/
+models/distilbert_indirect/
 models/distilbert_checkpoints/
 .env
 # Local tool artifacts
