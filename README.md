@@ -1,6 +1,6 @@
 # Prompt Injection Detector
 
-Comparing a TF-IDF baseline against a sentence-embedding classifier for detecting adversarial prompts targeting LLM applications.
+Detecting direct and indirect prompt injection with three lightweight classifiers (TF-IDF, MiniLM sentence embeddings, fine-tuned DistilBERT), with adversarial and explainability analyses.
 
 > Prompt injection is OWASP's top LLM security risk (LLM01). Commercial products like Lakera Guard, Rebuff, and PromptArmor address it in production. This project is a lightweight educational exploration comparing a TF-IDF baseline, a sentence-embedding classifier, and a fine-tuned DistilBERT classifier on ~1,600 examples from combined public datasets, with honest evaluation on a held-out set including hand-crafted adversarial examples. It is not intended to compete with production tools.
 
@@ -92,6 +92,44 @@ python -m scripts.eval_indirect_pilot    # scores all three models; needs models
 python -m scripts.explain_tfidf          # top TF-IDF terms and word-level explanations
 python demo.py                           # offline live demo: clean vs. hidden vs. base64-encoded injection
 ```
+
+## Indirect injection (full study)
+
+The pilot showed the problem; this study measures it at scale and tests fixes. Everything below is reproducible with the commands at the end of this section; full tables are in [`results/indirect/indirect_results.md`](results/indirect/indirect_results.md) and [`results/indirect/analysis.md`](results/indirect/analysis.md).
+
+**Benchmark** ([`data/indirect/`](data/indirect), built by `scripts/build_indirect_benchmark.py`, seed 42). 1,500 training and 800 test documents built on real carriers from BIPIA (Yi et al., KDD 2025; MIT licence, vendored in [`data/bipia/`](data/bipia)): emails, markdown tables and Stack Overflow-style code answers. Each carrier gets an injection, a harmless insert, or nothing. Injections are direct-dataset prompts (training documents use only `train.csv`; test documents only `test.csv` and the holdout) or BIPIA attack instructions wrapped in a framing template. Train and test differ in carrier documents, attack categories, injection texts, framing templates and benign hard-negative lines (for example "Please ignore my previous email, it was sent by mistake"), so test scores measure generalisation. Documents are at most 1,500 characters.
+
+**Models.** The three classifiers from the direct study, each in two versions: trained on prompts only (as before) and retrained on prompts plus the 1,500 training documents (`scripts/train_indirect.py`; DistilBERT reads 512 tokens). Each is scored on the whole document or on ~400-character overlapping windows, taking the maximum window score (`src/indirect/chunking.py`).
+
+**Results** (threshold 0.5; F1 with 95% bootstrap CI over the 800 test documents):
+
+| Model | F1, whole doc | F1, windows [95% CI] | Recall, windows | FPR, windows | Direct test F1 |
+|---|---|---|---|---|---|
+| TF-IDF + LR | 0.476 | 0.559 [0.513, 0.602] | 0.482 | 0.242 | 0.903 |
+| MiniLM + LR | 0.444 | 0.576 [0.528, 0.620] | 0.472 | 0.168 | 0.892 |
+| DistilBERT | 0.678 | 0.684 [0.654, 0.715] | 0.963 | 0.850 | 0.930 |
+| TF-IDF + LR (indirect-trained) | 0.634 | 0.779 [0.746, 0.811] | 0.757 | 0.188 | 0.927 |
+| MiniLM + LR (indirect-trained) | 0.649 | 0.701 [0.661, 0.738] | 0.672 | 0.245 | 0.884 |
+| DistilBERT (indirect-trained) | 0.846 | 0.863 [0.837, 0.889] | 0.800 | 0.055 | 0.934 |
+
+- **Prompt-trained models do not transfer.** TF-IDF and MiniLM miss most hidden injections; the prompt-trained DistilBERT flags 90% of benign documents, apparently treating anything unlike a short user question as an attack.
+- **Retraining on documents is the main fix**, and windows help the linear models further. Indirect-trained DistilBERT is best (F1 0.863, FPR 0.055) and loses nothing on direct prompts.
+- **Dilution.** Recall falls as the injection's share of the document falls ([`results/indirect/fig_dilution.png`](results/indirect/fig_dilution.png)); windows flatten the curve for the linear models.
+- **Evasions transfer.** Base64-encoding only the payload drops indirect-trained DistilBERT recall from 0.800 to 0.055; homoglyphs and typos mainly hurt TF-IDF. As an additional experiment beyond the project's scope, decoding base64 runs before scoring (`src/indirect/decode.py`) restores DistilBERT recall to 0.825 with no change in false positives.
+- **Explanations locate the payload.** The top-scoring window is the injected text for 95% of injected documents with indirect-trained DistilBERT (random window: 33%), and retraining roughly doubles the share of DistilBERT's attention that falls on payload tokens. TF-IDF word weights explain its false positives on code answers: second-person instructions ("you will get this error") look like an injection addressing the model.
+
+Limitations: synthetic insertion into real carriers, a fixed non-adaptive attack suite, single training seed, no threshold tuning for documents. See the project report for details.
+
+**Run it:**
+```bash
+python -m scripts.build_indirect_benchmark   # data/indirect/{train,test}.csv
+python -m scripts.train_indirect             # retrain all three (DistilBERT needs a GPU or ~30 min CPU)
+python -m scripts.eval_indirect              # results/indirect/indirect_results.md + figures
+python -m scripts.analysis_indirect          # dilution curve and bootstrap CIs
+python -m scripts.explain_indirect           # TF-IDF terms, window profiles, DistilBERT attention
+python -m scripts.extra_indirect             # word-level localisation, corrupted-benign control
+```
+`notebooks/02_colab_indirect.ipynb` and `notebooks/03_colab_followups.ipynb` run the same steps on a Colab GPU. In the Streamlit app, the **Document (indirect)** tab scans a document window by window and highlights where it fired.
 
 ## Architecture
 
