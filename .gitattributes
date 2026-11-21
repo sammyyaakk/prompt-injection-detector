@@ -1,0 +1,4 @@
+# Keep data files byte-identical across platforms. Several CSVs hold multi-line
+# text fields; converting their newlines to CRLF on Windows changes document
+# lengths and therefore any statistic computed from them.
+*.csv text eol=lf
