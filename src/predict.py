@@ -50,7 +50,8 @@ def _predict_distilbert(text):
     tokenizer, model = _load_distilbert()
     inputs = tokenizer(
         [text], truncation=True, padding=True,
-        max_length=DISTILBERT_MAX_LENGTH, return_tensors="pt",
+        max_length=DISTILBERT_MAX_LENGTH, return_token_type_ids=False,
+        return_tensors="pt",
     )
     with torch.no_grad():
         logits = model(**inputs).logits

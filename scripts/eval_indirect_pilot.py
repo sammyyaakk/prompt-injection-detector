@@ -41,7 +41,8 @@ def _predict_distilbert(tokenizer, model, texts):
             batch = texts[i:i + DISTILBERT_BATCH_SIZE]
             inputs = tokenizer(
                 batch, truncation=True, padding=True,
-                max_length=PILOT_DISTILBERT_MAX_LENGTH, return_tensors="pt",
+                max_length=PILOT_DISTILBERT_MAX_LENGTH, return_token_type_ids=False,
+                return_tensors="pt",
             )
             logits = model(**inputs).logits
             preds.extend(torch.argmax(logits, dim=-1).tolist())
