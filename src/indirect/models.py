@@ -45,8 +45,11 @@ def _distilbert_scorer(path):
         probs = []
         with torch.no_grad():
             for i in range(0, len(texts), BATCH_SIZE):
+                # DistilBERT takes no token_type_ids; tokenizers saved by newer transformers
+                # versions load as BertTokenizer and would otherwise return them.
                 enc = tokenizer(list(texts[i:i + BATCH_SIZE]), truncation=True, padding=True,
-                                max_length=DOC_MAX_LENGTH, return_tensors="pt").to(device)
+                                max_length=DOC_MAX_LENGTH, return_token_type_ids=False,
+                                return_tensors="pt").to(device)
                 probs.extend(torch.softmax(model(**enc).logits, dim=-1)[:, 1].cpu().tolist())
         return np.array(probs)
 
