@@ -115,7 +115,10 @@ def main():
              "## Recall by payload share of the document", ""]
     piv = d.pivot_table(index=["share_bin", "n"], columns=["model", "mode"], values="recall")
     piv.columns = [f"{MODEL_LABELS[m]} [{md}]" for m, md in piv.columns]
-    lines.append(piv.round(3).to_markdown() if hasattr(piv, "to_markdown") else piv.round(3).to_string())
+    try:
+        lines.append(piv.round(3).to_markdown())
+    except ImportError:  # tabulate not installed
+        lines.append(piv.round(3).to_string())
     lines += ["", "## 95% bootstrap confidence intervals (1,000 resamples)", ""]
     c = ci[ci["mode"] != "chunk_decode"].copy()
     c["ci"] = [f"{v:.3f} [{lo:.3f}, {hi:.3f}]" for v, lo, hi in zip(c.value, c.ci_low, c.ci_high)]
