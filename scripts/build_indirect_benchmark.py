@@ -1,8 +1,10 @@
 """Build the indirect prompt injection benchmark (v1).
 
-Every document is a real carrier from BIPIA (Yi et al., KDD 2025; MIT licence,
-vendored in data/bipia/): an email, a markdown table, or a Stack Overflow-style
-code answer. Into some carriers we plant an injection; into others we plant
+Every document is a real carrier from BIPIA (Yi et al., KDD 2025; vendored in
+data/bipia/ with its licence): an email, a markdown table, or a Stack
+Overflow-style code answer. BIPIA is MIT-licensed except the table carriers
+(WikiTableQuestions) and code carriers (Stack Exchange), which are CC BY-SA 4.0;
+see data/indirect/README.md. Into some carriers we plant an injection; into others we plant
 harmless text, so that "something was inserted" and "the document got longer"
 are not giveaways.
 
