@@ -67,13 +67,15 @@ TF-IDF leads on in-distribution metrics (test set, cross-validation) among the t
 
 All the numbers above use each model's default 0.5 decision threshold. See [`results/threshold_analysis.md`](results/threshold_analysis.md) for a sweep across thresholds on the test set, precision-recall curves ([`results/pr_curves.png`](results/pr_curves.png)), and recommended thresholds for high-recall vs. high-precision deployments.
 
+**Which DistilBERT.** The DistilBERT numbers in this section and in the pilot below come from the original fine-tune (July 2026). For the full study, the prompt-trained DistilBERT was fine-tuned again on a GPU with the same settings and seed; GPU training is not bit-for-bit reproducible, so that model differs slightly: test F1 0.930 (precision 0.943, recall 0.917, FPR 0.047) and holdout F1 0.833 (recall 0.833, FPR 0.167), per [`results/indirect/indirect_results.md`](results/indirect/indirect_results.md). The TF-IDF and MiniLM models are the same in both.
+
 ## Indirect injection (pilot)
 
 A first, small-scale step from classifying single prompts to classifying documents. It follows the indirect threat model of Greshake et al. (2023): the attacker controls retrieved content, and the detector screens that content before it reaches the LLM. This is a pilot; read its numbers as directional.
 
 **Benchmark.** [`data/indirect_pilot/indirect_pilot.csv`](data/indirect_pilot/indirect_pilot.csv) holds 276 documents built by `scripts/build_indirect_pilot.py` (seed 42). 88 injection prompts and 138 benign prompts, taken only from the test split and the hand-crafted holdout (never `train.csv`), are embedded at the start, middle or end of short Wikipedia paragraphs from the SQuAD validation set, plus 50 unmodified paragraphs. Documents are capped at 400 DistilBERT tokens, so 32 of the 120 available injections (mostly long DAN-style jailbreaks) did not fit and were left out.
 
-**Results.** The existing models, with no retraining, at threshold 0.5 (DistilBERT reads up to 512 tokens here):
+**Results.** The existing models, with no retraining, at threshold 0.5 (DistilBERT is the July fine-tune and reads up to 512 tokens here):
 
 | Metric | TF-IDF + LR | MiniLM + LR | DistilBERT |
 |---|---|---|---|
@@ -111,6 +113,8 @@ The pilot showed the problem; this study measures it at scale and tests fixes. E
 | TF-IDF + LR (indirect-trained) | 0.634 | 0.779 [0.746, 0.811] | 0.757 | 0.188 | 0.927 |
 | MiniLM + LR (indirect-trained) | 0.649 | 0.701 [0.661, 0.738] | 0.672 | 0.245 | 0.884 |
 | DistilBERT (indirect-trained) | 0.846 | 0.863 [0.837, 0.889] | 0.800 | 0.055 | 0.934 |
+
+Both DistilBERT rows are this study's GPU fine-tunes, so the prompt-trained DistilBERT's direct test F1 here (0.930) differs from the July model's 0.929 in [Results](#results); see "Which DistilBERT" there.
 
 - **Prompt-trained models do not transfer.** TF-IDF and MiniLM miss most hidden injections; the prompt-trained DistilBERT flags 90% of benign documents, apparently treating anything unlike a short user question as an attack.
 - **Retraining on documents is the main fix**, and windows help the linear models further. Indirect-trained DistilBERT is best (F1 0.863, FPR 0.055) and loses nothing on direct prompts.
