@@ -119,8 +119,17 @@ Both DistilBERT rows are this study's GPU fine-tunes, so the prompt-trained Dist
 - **Prompt-trained models do not transfer.** TF-IDF and MiniLM miss most hidden injections; the prompt-trained DistilBERT flags 90% of benign documents, apparently treating anything unlike a short user question as an attack.
 - **Retraining on documents is the main fix**, and windows help the linear models further. Indirect-trained DistilBERT is best (F1 0.863, FPR 0.055) and loses nothing on direct prompts.
 - **Dilution.** Recall falls as the injection's share of the document falls ([`results/indirect/fig_dilution.png`](results/indirect/fig_dilution.png)); windows flatten the curve for the linear models.
-- **Evasions transfer.** Base64-encoding only the payload drops indirect-trained DistilBERT recall from 0.800 to 0.055; homoglyphs and typos mainly hurt TF-IDF. As an additional experiment beyond the project's scope, decoding base64 runs before scoring (`src/indirect/decode.py`) restores DistilBERT recall to 0.825 with no change in false positives.
+- **Evasions transfer to the study models.** Base64-encoding only the payload drops indirect-trained DistilBERT recall from 0.800 to 0.055; homoglyphs and typos mainly hurt TF-IDF. As an additional experiment beyond the project's scope, decoding base64 runs before scoring (`src/indirect/decode.py`) restores DistilBERT recall to 0.825 with no change in false positives.
 - **Explanations locate the payload.** The top-scoring window is the injected text for 95% of injected documents with indirect-trained DistilBERT (random window: 33%). Within that top window, the indirect-trained DistilBERT's last-layer `[CLS]` attention puts on average 82% of its weight on payload tokens, against 53% for the prompt-trained model, while payload tokens make up about 47% of those windows (394 and 333 documents respectively; windows that do not contain the payload are excluded). TF-IDF word weights explain its false positives on code answers: second-person instructions ("you will get this error") look like an injection addressing the model.
+
+**Outside baseline.** The public detector [`protectai/deberta-v3-base-prompt-injection-v2`](https://huggingface.co/protectai/deberta-v3-base-prompt-injection-v2), used as a baseline in several of the papers in [`docs/lit_review_table.md`](docs/lit_review_table.md), was scored with the same protocol and no retraining (`scripts/eval_baseline.py`; full results in [`results/indirect/baseline_results.md`](results/indirect/baseline_results.md)):
+
+| Model (indirect test) | F1, whole doc | F1, windows | Recall, windows | FPR, windows | Top window = payload |
+|---|---|---|---|---|---|
+| ProtectAI DeBERTa-v3 v2 (public) | 0.539 | 0.637 | 0.708 | 0.512 | 0.584 |
+| DistilBERT (indirect-trained) | 0.846 | 0.863 | 0.800 | 0.055 | 0.951 |
+
+It works well on prompts (direct test F1 0.832, holdout F1 0.917) but not on documents, where window scoring raises its false-positive rate to 0.512 (0.760 on emails). Unlike the study models, it is not bypassed by base64-encoding the payload (window recall 0.975); whether it also flags harmless base64 text was not tested.
 
 Limitations: synthetic insertion into real carriers, a fixed non-adaptive attack suite, single training seed, no threshold tuning for documents. See the project report for details.
 
@@ -132,6 +141,7 @@ python -m scripts.eval_indirect              # results/indirect/indirect_results
 python -m scripts.analysis_indirect          # dilution curve and bootstrap CIs
 python -m scripts.explain_indirect           # TF-IDF terms, window profiles, DistilBERT attention
 python -m scripts.extra_indirect             # word-level localisation, corrupted-benign control
+python -m scripts.eval_baseline              # ProtectAI DeBERTa v2 baseline (downloads ~740 MB; ~35 min CPU)
 ```
 `notebooks/02_colab_indirect.ipynb` and `notebooks/03_colab_followups.ipynb` run the same steps on a Colab GPU. In the Streamlit app, the **Document (indirect)** tab scans a document window by window and highlights where it fired.
 
