@@ -38,14 +38,15 @@ def main():
         lines.append(f"| {kind} | {len(set(train))} | {len(set(test))} | {len(both)} |")
 
     tr, te = pd.read_csv("data/indirect/train.csv"), pd.read_csv("data/indirect/test.csv")
-    lines += ["", f"Injection texts in both splits: {len(set(tr.payload.dropna()) & set(te.payload.dropna()))}. "
-              f"Framing templates in both splits: {len(set(tr.template.dropna()) & set(te.template.dropna()))}.", ""]
+    lines += ["", (f"Injection texts in both splits: {len(set(tr.payload.dropna()) & set(te.payload.dropna()))}. "
+                   f"Framing templates in both splits: {len(set(tr.template.dropna()) & set(te.template.dropna()))}."),
+              ""]
 
     s = pd.read_csv("results/indirect/indirect_test_scores.csv")
     parts = s.doc_id.str.split(":")
     s["shared"] = [int(i) in shared_idx[k] for k, i in zip(parts.str[1], parts.str[2])]
-    lines += [f"Test documents built on a carrier that also appears in training: {int(s.shared.sum())} of {len(s)} "
-              f"({int(s[s.shared].label.sum())} injected).", "",
+    lines += [(f"Test documents built on a carrier that also appears in training: {int(s.shared.sum())} of {len(s)} "
+               f"({int(s[s.shared].label.sum())} injected)."), "",
               "Window-mode metrics with and without those documents:", "",
               "| model | test documents | F1 | recall | FPR |", "|---|---|---|---|---|"]
     for model in ["tfidf_ind", "embedding_ind", "distilbert_ind"]:
