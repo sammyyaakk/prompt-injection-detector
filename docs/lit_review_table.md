@@ -2,65 +2,80 @@
 
 Literature table for the project "Explainable, Adversarial Robust Detection of Direct and Indirect Prompt
 Injection Attacks in Large Language Model Systems Using Lightweight Classifiers". Ten peer-reviewed papers
-from 2023–2026, chosen for the related-work section and the mid-semester progress review.
+from 2023–2026, chosen for the related-work section.
 
-Compiled 27 October 2026. Every citation below was checked against a primary record (DOI metadata,
-proceedings index or conference programme); see [Verification log](#verification-log). Numbers about our
-own models come from `results/` in this repository.
+First compiled 27 October 2026 from abstracts and bibliographic records; revised 22 November 2026 after
+reading the full texts (see [Scope](#scope-and-limitations-of-this-review)). Every citation was checked against
+a primary record (DOI metadata, proceedings index or conference programme); see
+[Verification log](#verification-log). Numbers about our own models come from `results/indirect/` in this
+repository.
 
 ## Table
 
-| # | Paper | Venue / year | Method | Setting | Relation to our project |
-|---|---|---|---|---|---|
-| 1 | Greshake et al., *Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection* [1] | ACM AISec (CCS workshop), 2023 | Attack study: introduces indirect prompt injection, a taxonomy of its impacts, and demonstrations on real LLM-integrated applications. No detector. | Indirect | Source of our threat model: the attacker controls retrieved content, not the user's query or the model. Our indirect pilot operationalises this by embedding payloads in Wikipedia paragraphs. |
-| 2 | Liu et al., *Formalizing and Benchmarking Prompt Injection Attacks and Defenses* [2] | USENIX Security, 2024 | Formal framework treating existing attacks as special cases; benchmarks 5 attacks and 10 defenses (including detection defenses) across 10 LLMs and 7 tasks; Open-Prompt-Injection toolkit. | Direct and indirect (injected instruction inside task data) | Their "target data + injected instruction" formulation matches how our pilot documents are built (host paragraph + payload). Their detection baselines are LLM-based and heavier than ours; useful as context, not as baselines this semester. |
-| 3 | Ayub and Majumdar, *Embedding-based classifiers can detect prompt injection attacks* [3] | CAMLIS, 2024 (CEUR-WS Vol-3920) | Three embedding models plus traditional ML classifiers; Random Forest and XGBoost perform best and outperform open-source encoder-based detectors. | Direct (single prompts) | Closest prior work to our MiniLM embeddings + LR model. They evaluate prompts only; our pilot tests the same idea on documents, where MiniLM + LR recall falls from 0.784 on the payloads alone to 0.477 once embedded (n = 88). |
-| 4 | Yi et al., *Benchmarking and Defending against Indirect Prompt Injection Attacks on Large Language Models* (BIPIA) [4] | ACM KDD, 2025 | First indirect prompt injection benchmark (malicious instructions in external content); finds LLMs universally vulnerable; proposes black-box prompting defences and a white-box fine-tuning defence. | Indirect | Closest benchmark design to our pilot: instructions hidden in external content. BIPIA measures LLM vulnerability and LLM-side defences rather than standalone lightweight detectors; a candidate source of realistic host documents when we scale past the 276-document pilot. |
-| 5 | Hung et al., *Attention Tracker: Detecting Prompt Injection Attacks in LLMs* [5] | Findings of NAACL, 2025 | Training-free detection: tracks "important heads" whose attention shifts from the original instruction to the injected one (the distraction effect); no extra LLM inference. | Direct | Attention-based detection, relevant to our goal of inspecting DistilBERT attention. The difference: they read the protected LLM's attention, while we explain a separate lightweight detector that needs no access to the LLM. |
-| 6 | Jacob et al., *PromptShield: Deployable Detection for Prompt Injection Attacks* [6] | ACM CODASPY, 2025 | Benchmark of conversational and application-structured data for training and evaluating detectors; a fine-tuned detector that is strongest in the low false-positive-rate regime. | Direct and application-structured | Supports reporting detectors at low FPR, as our threshold sweep and pilot do (pilot FPR 0.016–0.021). Their application-structured data is a step toward the indirect setting we target. |
-| 7 | Liu et al., *DataSentinel: A Game-Theoretic Detection of Prompt Injection Attacks* [7] | IEEE S&P, 2025 | Fine-tunes an LLM detector, building on known-answer detection, with a minimax objective in which adaptive injections are generated during training. | Injected data (indirect-style) | Shows detectors should be tested against adaptive attackers. Our six-attack suite is fixed and non-adaptive; this is a limitation to state. Their detector is an LLM, far heavier than our classifiers. |
-| 8 | Abdelnabi et al., *Get my drift? Catching LLM Task Drift with Activation Deltas* (TaskTracker) [8] | IEEE SaTML, 2025 | Simple linear classifiers on activation deltas (LLM activations before vs. after reading external data) detect task drift without fine-tuning the LLM. | Indirect | A lightweight classifier for indirect injection, but one that needs white-box access to the LLM's activations. Our detectors read only the text, so they are model-agnostic; a useful contrast for the paper. |
-| 9 | Li et al., *PIGuard: Prompt Injection Guardrail via Mitigating Overdefense for Free* (arXiv: InjecGuard) [9] | ACL, 2025 | Guard model trained with MOF to reduce trigger-word bias; NotInject benchmark of 339 benign prompts rich in trigger words, on which existing guards fall to about 60% accuracy. | Direct | Same failure mode our holdout probes with 12 benign trigger-word prompts. Our TF-IDF top features (`results/tfidf_top_features.png`) show reliance on function words and German words; NotInject is a larger set we could evaluate on. |
-| 10 | Zhong et al., *Attention is All You Need to Defend Against Indirect Prompt Injection Attacks in LLMs* (Rennervate) [10] | NDSS, 2026 | Token-level detection of injected instructions from LLM attention features with two-step attentive pooling, followed by sanitisation; introduces the FIPI dataset. | Indirect | Locates the injected span inside a document, as our word-level TF-IDF explanations do (`results/explain_examples.html`). Theirs needs the LLM's attention; ours explains a text-only classifier. |
+| # | Paper | Venue / year | Method | Data it tests on | Text-only detectors evaluated | Relation to our project |
+|---|---|---|---|---|---|---|
+| 1 | Greshake et al., *Not What You've Signed Up For* [1] | ACM AISec, 2023 | Attack study and taxonomy of indirect prompt injection; no detector proposed or tested | Real and synthetic LLM-integrated apps (e.g. Bing Chat) with planted injections | None. Calls current input filtering "likely brittle" and shows Base64-encoded injections (§4.3.2) | Source of our threat model. Raises encoding as a filter-evasion tactic without testing any filter; we test it against detectors |
+| 2 | Liu et al., *Formalizing and Benchmarking Prompt Injection Attacks and Defenses* [2] | USENIX Security, 2024 | Formal framework; 5 attacks × 10 defenses, 10 LLMs, 7 tasks | Task data (e.g. MRPC, SST2, Gigaword) with an injected instruction | None. All detection defenses (perplexity, LLM-based, response-based, known-answer) need an LLM | Their "data + injected instruction" setup matches our documents; their detectors are far heavier than ours |
+| 3 | Ayub and Majumdar, *Embedding-based classifiers can detect prompt injection attacks* [3] | CAMLIS, 2024 | Three embedding models (incl. all-MiniLM-L6-v2) + LR, XGBoost, Random Forest | 467,057 single prompts from six public datasets | ProtectAI v1/v2, deepset and a SetFit model as baselines (AUC 0.50–0.59 vs 0.76 for theirs) | Closest to our MiniLM + LR model, on prompts only; they name indirect injection as future work. No evasion tests, no FPR |
+| 4 | Yi et al., *Benchmarking and Defending against Indirect Prompt Injection Attacks* (BIPIA) [4] | ACM KDD, 2025 | Benchmark of indirect injection against LLMs; prompting and fine-tuning defenses on the LLM | Emails, web pages, tables, code and summaries with attacks at start, middle or end; attack types include Base Encoding, ciphers and reversed text | None; the metric is LLM attack success rate | Our benchmark's carriers come from BIPIA. Its encoding attacks target LLMs; we test them against detectors |
+| 5 | Hung et al., *Attention Tracker* [5] | Findings of NAACL, 2025 | Training-free detection from the protected LLM's attention heads | Open-Prompt-Injection and deepset: task data with injected instructions | ProtectAI (AUROC 0.69 / 0.90) and PromptGuard (0.97 / 0.75) as baselines | Needs white-box LLM access; ours is text-only. Finds data length has little effect on its own score |
+| 6 | Jacob et al., *PromptShield* [6] | ACM CODASPY, 2025 | Fine-tuned detectors from DeBERTa-v3-base up to Llama-3.1-8B (LoRA) | Conversational prompts and "application-structured" prompt + data, with injections appended to the data | PromptGuard, ProtectAI v1/v2, InjecGuard, a DistilBERT detector; at 1% FPR their best model reaches 94.8% TPR vs 1.97% for ProtectAI v2 | Text-only and aimed at indirect injection, but no documents with injections hidden inside, no evasion tests, no explanations |
+| 7 | Liu et al., *DataSentinel* [7] | IEEE S&P, 2025 | Mistral-7B detector fine-tuned against adaptive attacks (minimax) | Task data contaminated with injected instructions (7 tasks) | PromptGuard (FPR up to 1.00) and a CLIP-embedding classifier (FPR up to 0.73) as baselines | Runs a 7B model per check. Its adaptive attacks are optimisation-based (GCG); no encoding or character evasions |
+| 8 | Abdelnabi et al., *Get my drift?* (TaskTracker) [8] | IEEE SaTML, 2025 | Linear and metric-learning probes on the LLM's activation deltas | SQuAD and HotPotQA paragraphs with instructions at start, middle or end | Prompt Guard ROC AUC 0.974 and Prompt Shields 0.988 vs 0.996 for theirs; Prompt Guard 0.728 on a harder private set | Closest benchmark design to ours, but needs the LLM's activations. Suggests longer injections may dilute their activation signal |
+| 9 | Li et al., *PIGuard* (arXiv: InjecGuard) [9] | ACL, 2025 | DeBERTa-v3-base guard trained to reduce trigger-word over-defense; NotInject benign set (339) | NotInject, WildGuard, PINT and BIPIA injections | Deepset, Fmops, PromptGuard, ProtectAI v2, LakeraGuard; on BIPIA injections ProtectAI v2 catches 8.7% and LakeraGuard 12.0% | Over-defense on single prompts; we measure it on documents with benign imperatives. Base64 appears only as a training augmentation |
+| 10 | Zhong et al., *Attention is All You Need to Defend Against IPI* (Rennervate) [10] | NDSS, 2026 | Token-level detection from the LLM's attention, then sanitisation | FIPI: 100k documents with injections at random positions | PromptGuard (acc 64.4%, FPR 69.9%) and ProtectAI v2 (acc 75.5%, FNR 46.5%) as baselines | Shows prompt-trained detectors fail on documents in opposite ways, as our prompt-trained models do. Localises injected tokens, but needs the LLM's internals |
 
 ## How the papers group
 
-**Threat model and benchmarks [1], [2], [4].** Greshake et al. defined indirect injection. Liu et al. and BIPIA
-turned it into benchmarks, but both measure how vulnerable LLMs are and test LLM-side defences, not standalone
-detectors.
+**Threat model and LLM-side benchmarks [1], [2], [4].** These define indirect injection and measure how
+vulnerable LLMs are. None evaluates a standalone text classifier.
 
-**Lightweight text classifiers [3], [6], [9].** These are the closest to our models: embeddings plus classical
-ML [3], fine-tuned detectors at low FPR [6], and guard models that over-flag trigger words [9]. All three are
-evaluated on prompts or application inputs, not on long documents carrying an embedded payload.
+**Detectors that use an LLM [2], [5], [7], [8], [10].** They either run an LLM to judge the input or read the
+protected model's attention or activations. They reach high accuracy, but need white-box access or an extra
+LLM call.
 
-**Detectors that use the LLM's internals [5], [8], [10].** Attention patterns [5], [10] and activation deltas [8]
-work well in their papers, and [8] and [10] target the indirect setting directly. They need white-box access to the
-protected model, which a text-only classifier does not.
+**Standalone text classifiers [3], [6], [9].** Ayub and Majumdar test single prompts; PromptShield and PIGuard
+also cover data-carrying inputs (application-structured inputs, BIPIA injections).
 
-**Adaptive attackers [7].** DataSentinel trains against adaptive injections, a stronger threat model than our
-fixed attack suite.
+**Text-only detectors as baselines on injected data [5]–[10].** ProtectAI and PromptGuard appear in almost every
+one of these papers, and their results on injected data vary widely: from ROC AUC 0.974 (Prompt Guard,
+TaskTracker's test set) down to 8.7% of BIPIA injections caught (ProtectAI v2, PIGuard) and a 69.9% false
+positive rate (PromptGuard, Rennervate).
 
 ## Where our project fits
 
-- **Gap (a), document-level evaluation of lightweight classifiers.** In this set, the text-only lightweight
-  detectors [3], [6], [9] are evaluated on prompts, while the indirect-setting detectors [8], [10] use LLM
-  internals. Our pilot evaluates text-only classifiers on documents and finds that embedding a payload in a
-  paragraph cuts recall from 0.773–0.852 to 0.477–0.511 (n = 88 injected documents, `results/indirect_pilot.md`).
-- **Gap (b), explainability.** The attention-based papers [5], [10] explain the protected LLM; we explain the
-  detector itself.
-- **Gap (c), evasion transfer.** Our pilot finds that base64-encoding only the injected span drops recall to
-  0.000–0.045 for all three models. This review read abstracts and bibliographic records only, so it cannot
-  say whether these ten papers test encoding-based evasion; check the full texts before claiming this as a gap
-  in the paper.
+Text-only detectors *have* been run on injected documents, mostly as baselines reported with one aggregate
+number. What none of the ten papers does:
+
+1. **Explain why they fail on documents.** We measure recall against the share of the document the injection
+   fills (dilution) and test window scoring as a fix (`results/indirect/fig_dilution.png`).
+2. **Compare prompt-trained and document-trained versions of the same lightweight models** on a test split
+   built for generalisation. Indirect-trained DistilBERT reaches F1 0.863 [0.837, 0.889] with FPR 0.055, against
+   0.684 and FPR 0.850 for the prompt-trained one.
+3. **Test encoding and character evasions against detectors in the document setting.** Base64 on the injected
+   span drops indirect-trained DistilBERT recall from 0.800 to 0.055; a corrupted-benign control shows its
+   gains under homoglyphs are a shortcut (FPR 0.135 → 0.370).
+4. **Measure whether a text-only detector locates the injection.** The top-scoring window is the payload for
+   95.1% of injected test documents (random window: 32.8%).
+5. **Measure false positives on document-level hard negatives**, such as "Please ignore my previous email".
+   Indirect-trained DistilBERT: FPR 0.116 on benign imperatives.
+
+The observation that prompt-trained detectors fail on documents in opposite directions (missing attacks, or
+flagging harmless text) is not new; Rennervate reports it for ProtectAI v2 and PromptGuard. Because every paper
+that evaluates text-only detectors uses ProtectAI and/or PromptGuard, they are the expected baselines for our
+benchmark.
 
 ## Scope and limitations of this review
 
-- Narrative review of ten papers, chosen for relevance to classifier-based and lightweight detection; it is
-  not a systematic search and does not claim to cover the field.
+- Narrative review of ten papers, chosen for relevance to classifier-based and lightweight detection; not a
+  systematic search.
 - Inclusion: peer-reviewed venue, published 2023–2026, detects or benchmarks direct or indirect prompt
   injection. Three papers were required by the project brief: [1], [4], [10].
-- Read scope: abstracts, proceedings records and conference programmes. Method descriptions above restate
-  what those sources say; no paper's experiments were re-checked, and no method weaknesses are claimed.
+- Read scope (22 November 2026): the full text of every paper was obtained (arXiv HTML or PDF, or the ACL
+  Anthology PDF for [5] and [9]) and read for its method, evaluation data, baselines, evasion tests,
+  localisation, false positives and limitations. Sections outside those topics were searched by keyword
+  rather than read line by line, so "not found" means not found in those sections and searches. For [9], both
+  the ACL version and the earlier arXiv InjecGuard version were used.
 
 ## Verification log
 
