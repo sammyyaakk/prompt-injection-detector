@@ -9,8 +9,12 @@ harmless text, so that "something was inserted" and "the document got longer"
 are not giveaways.
 
 Generalisation is built into the split. Train and test differ in:
-  * carrier documents      (BIPIA train vs test files)
-  * attack categories      (BIPIA's own disjoint train/test category lists)
+  * carrier documents      (BIPIA train vs test files; BIPIA's email files share
+                            11 emails, so 52 test documents sit on a carrier also
+                            used in training: see scripts/check_carrier_overlap.py)
+  * attack categories      (BIPIA's train/test category lists; 24 of each split's
+                            25 categories are unique to it, "Language Translation"
+                            is in both)
   * direct-injection text  (data/processed/train.csv vs test.csv + holdout)
   * framing templates      (TRAIN_TEMPLATES vs TEST_TEMPLATES below)
   * benign hard negatives  (TRAIN_BENIGN_IMPERATIVES vs TEST_BENIGN_IMPERATIVES)
