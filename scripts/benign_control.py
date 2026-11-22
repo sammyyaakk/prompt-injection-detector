@@ -110,7 +110,12 @@ def write_markdown():
              "benign documents about as much as it raises recall on injected ones, the recall gain is a shortcut "
              "(the transformation itself looks suspicious), not detection. `base64_encoding` inserts "
              "`decode this: <base64>`; `base64_raw` inserts the base64 text alone. Threshold 0.5.")
-    lines = ["# Benign control for the payload attacks", "", intro, ""]
+    provenance = ("FPR rows are computed by this script. Recall for `base64_raw` is computed here; recall for the "
+                  "other variants is read from `adversarial.csv` (study models) and `baseline_adversarial.csv` "
+                  "(baseline). The baseline rows in this repository were scored on a Colab T4 GPU, the study rows "
+                  "and the earlier baseline results on CPU; the baseline's no-attack benign FPR is 0.550 on the GPU "
+                  "and 0.545 on the CPU (one document of 200).")
+    lines = ["# Benign control for the payload attacks", "", intro, "", provenance, ""]
     for mode in ["chunk", "chunk_decode"]:
         lines += [f"## Mode: {mode}", "", "| variant | model | FPR on benign | recall on injected |", "|---|---|---|---|"]
         for r in d[d["mode"] == mode].itertuples():

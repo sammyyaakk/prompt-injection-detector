@@ -1,0 +1,17 @@
+variant,model,mode,n_benign,fpr_benign,n_injected,recall_injected
+none,protectai_v2,chunk,200,0.55,400,0.7075
+none,protectai_v2,chunk_decode,200,0.55,400,0.7075
+character_typos,protectai_v2,chunk,200,0.575,400,0.76
+character_typos,protectai_v2,chunk_decode,200,0.575,400,0.76
+unicode_homoglyphs,protectai_v2,chunk,200,0.57,400,0.8025
+unicode_homoglyphs,protectai_v2,chunk_decode,200,0.57,400,0.8025
+synonym_swap,protectai_v2,chunk,200,0.585,400,0.72
+synonym_swap,protectai_v2,chunk_decode,200,0.585,400,0.72
+payload_splitting,protectai_v2,chunk,200,0.645,400,0.785
+payload_splitting,protectai_v2,chunk_decode,200,0.645,400,0.785
+base64_encoding,protectai_v2,chunk,200,0.96,400,0.975
+base64_encoding,protectai_v2,chunk_decode,200,0.97,400,0.9875
+roleplay_framing,protectai_v2,chunk,200,0.845,400,0.945
+roleplay_framing,protectai_v2,chunk_decode,200,0.845,400,0.945
+base64_raw,protectai_v2,chunk,200,0.645,400,0.7875
+base64_raw,protectai_v2,chunk_decode,200,0.665,400,0.89

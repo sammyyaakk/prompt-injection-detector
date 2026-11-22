@@ -53,8 +53,9 @@ number. What none of the ten papers does:
    built for generalisation. Indirect-trained DistilBERT reaches F1 0.863 [0.837, 0.889] with FPR 0.055, against
    0.684 and FPR 0.850 for the prompt-trained one.
 3. **Test encoding and character evasions against detectors in the document setting.** Base64 on the injected
-   span drops indirect-trained DistilBERT recall from 0.800 to 0.055; a corrupted-benign control shows its
-   gains under homoglyphs are a shortcut (FPR 0.135 → 0.370).
+   span drops indirect-trained DistilBERT recall from 0.800 to 0.055; a benign control shows its gains under
+   homoglyphs are a shortcut (FPR on benign documents 0.095 → 0.485), and so is the public ProtectAI
+   detector's resistance to base64 (it flags 96% of benign documents with a `decode this: <base64>` insert).
 4. **Measure whether a text-only detector locates the injection.** The top-scoring window is the payload for
    95.1% of injected test documents (random window: 32.8%).
 5. **Measure false positives on document-level hard negatives**, such as "Please ignore my previous email".
