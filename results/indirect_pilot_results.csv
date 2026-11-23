@@ -1,0 +1,59 @@
+model,section,subset,n,metric,value
+TF-IDF + LR,pilot_overall,all,276,accuracy,0.8333333333333334
+TF-IDF + LR,pilot_overall,all,276,precision,0.9375
+TF-IDF + LR,pilot_overall,all,276,recall,0.5113636363636364
+TF-IDF + LR,pilot_overall,all,276,f1,0.6617647058823529
+TF-IDF + LR,pilot_overall,all,276,fpr,0.015957446808510637
+TF-IDF + LR,recall_by_position,start,30,recall,0.4666666666666667
+TF-IDF + LR,recall_by_position,middle,29,recall,0.5862068965517241
+TF-IDF + LR,recall_by_position,end,29,recall,0.4827586206896552
+TF-IDF + LR,fpr_by_negative,embedded_benign,138,fpr,0.021739130434782608
+TF-IDF + LR,fpr_by_negative,plain_paragraph,50,fpr,0.0
+TF-IDF + LR,base64_span_attack,injected,88,baseline_recall,0.5113636363636364
+TF-IDF + LR,base64_span_attack,injected,88,attack_recall,0.0
+TF-IDF + LR,base64_span_attack,injected,88,recall_drop,0.5113636363636364
+TF-IDF + LR,direct_reference,same_payloads_standalone,88,recall,0.7727272727272727
+MiniLM Embeddings + LR,pilot_overall,all,276,accuracy,0.8188405797101449
+MiniLM Embeddings + LR,pilot_overall,all,276,precision,0.9130434782608695
+MiniLM Embeddings + LR,pilot_overall,all,276,recall,0.4772727272727273
+MiniLM Embeddings + LR,pilot_overall,all,276,f1,0.6268656716417911
+MiniLM Embeddings + LR,pilot_overall,all,276,fpr,0.02127659574468085
+MiniLM Embeddings + LR,recall_by_position,start,30,recall,0.5
+MiniLM Embeddings + LR,recall_by_position,middle,29,recall,0.5517241379310345
+MiniLM Embeddings + LR,recall_by_position,end,29,recall,0.3793103448275862
+MiniLM Embeddings + LR,fpr_by_negative,embedded_benign,138,fpr,0.028985507246376812
+MiniLM Embeddings + LR,fpr_by_negative,plain_paragraph,50,fpr,0.0
+MiniLM Embeddings + LR,base64_span_attack,injected,88,baseline_recall,0.4772727272727273
+MiniLM Embeddings + LR,base64_span_attack,injected,88,attack_recall,0.045454545454545456
+MiniLM Embeddings + LR,base64_span_attack,injected,88,recall_drop,0.4318181818181818
+MiniLM Embeddings + LR,direct_reference,same_payloads_standalone,88,recall,0.7840909090909091
+DistilBERT,pilot_overall,all,276,accuracy,0.822463768115942
+DistilBERT,pilot_overall,all,276,precision,0.9333333333333333
+DistilBERT,pilot_overall,all,276,recall,0.4772727272727273
+DistilBERT,pilot_overall,all,276,f1,0.631578947368421
+DistilBERT,pilot_overall,all,276,fpr,0.015957446808510637
+DistilBERT,recall_by_position,start,30,recall,0.4
+DistilBERT,recall_by_position,middle,29,recall,0.5517241379310345
+DistilBERT,recall_by_position,end,29,recall,0.4827586206896552
+DistilBERT,fpr_by_negative,embedded_benign,138,fpr,0.021739130434782608
+DistilBERT,fpr_by_negative,plain_paragraph,50,fpr,0.0
+DistilBERT,base64_span_attack,injected,88,baseline_recall,0.4772727272727273
+DistilBERT,base64_span_attack,injected,88,attack_recall,0.0
+DistilBERT,base64_span_attack,injected,88,recall_drop,0.4772727272727273
+DistilBERT,direct_reference,same_payloads_standalone,88,recall,0.8522727272727273
+MiniLM Embeddings + LR,payload_past_window,start,30,clean_window_256,6.0
+MiniLM Embeddings + LR,payload_past_window,start,30,base64_window_256,0.0
+MiniLM Embeddings + LR,payload_past_window,middle,29,clean_window_256,9.0
+MiniLM Embeddings + LR,payload_past_window,middle,29,base64_window_256,0.0
+MiniLM Embeddings + LR,payload_past_window,end,29,clean_window_256,10.0
+MiniLM Embeddings + LR,payload_past_window,end,29,base64_window_256,0.0
+MiniLM Embeddings + LR,base64_span_tokenization,injected,88,encoded_span_any_unk,77.0
+MiniLM Embeddings + LR,base64_span_tokenization,injected,88,encoded_span_single_unk,24.0
+DistilBERT,payload_past_window,start,30,clean_window_512,0.0
+DistilBERT,payload_past_window,start,30,base64_window_512,0.0
+DistilBERT,payload_past_window,middle,29,clean_window_512,0.0
+DistilBERT,payload_past_window,middle,29,base64_window_512,0.0
+DistilBERT,payload_past_window,end,29,clean_window_512,0.0
+DistilBERT,payload_past_window,end,29,base64_window_512,0.0
+DistilBERT,base64_span_tokenization,injected,88,encoded_span_any_unk,77.0
+DistilBERT,base64_span_tokenization,injected,88,encoded_span_single_unk,24.0

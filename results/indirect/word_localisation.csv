@@ -1,0 +1,5 @@
+model,method,docs,top5_in_payload,random_baseline
+tfidf,linear weights,400,0.6045,0.435509791075455
+embedding,word removal,400,0.5935,0.4250491497137523
+tfidf_ind,linear weights,400,0.7080000000000001,0.49526644757349025
+embedding_ind,word removal,400,0.645,0.4518218836793879

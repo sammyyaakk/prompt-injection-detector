@@ -40,7 +40,7 @@ def _predict_tfidf(text):
 
 def _predict_embedding(text):
     clf = _load_embedding_clf()
-    embedding = get_embeddings([text])
+    embedding = get_embeddings([text], show_progress_bar=False)
     label = int(clf.predict(embedding)[0])
     confidence = float(clf.predict_proba(embedding)[0][label])
     return label, confidence
@@ -50,7 +50,8 @@ def _predict_distilbert(text):
     tokenizer, model = _load_distilbert()
     inputs = tokenizer(
         [text], truncation=True, padding=True,
-        max_length=DISTILBERT_MAX_LENGTH, return_tensors="pt",
+        max_length=DISTILBERT_MAX_LENGTH, return_token_type_ids=False,
+        return_tensors="pt",
     )
     with torch.no_grad():
         logits = model(**inputs).logits

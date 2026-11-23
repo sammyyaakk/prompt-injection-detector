@@ -1,0 +1,2 @@
+model,docs_with_2plus_windows,top_window_hit_rate,random_window_baseline,hit_rate_when_detected,detected
+protectai_v2,365,0.5835616438356165,0.32841922156990666,0.6481481481481481,270

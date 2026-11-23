@@ -1,0 +1,134 @@
+"""Dilution curve and bootstrap confidence intervals for the indirect test set.
+
+Uses the per-document scores written by scripts/eval_indirect.py
+(results/indirect/indirect_test_scores.csv), so no model is re-run.
+
+1. Dilution (RQ2): recall as a function of the payload's share of the document
+   (payload characters / document characters), whole-document vs window scoring.
+2. 95% bootstrap confidence intervals (1,000 resamples of the 800 documents)
+   for precision, recall, F1 and FPR of every model and scoring mode.
+
+Writes results/indirect/dilution.csv, fig_dilution.png, bootstrap_ci.csv, analysis.md
+Run: python -m scripts.analysis_indirect
+"""
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+
+from src.indirect.models import MODEL_LABELS, MODEL_ORDER
+
+OUT = "results/indirect"
+THRESHOLD = 0.5
+N_BOOT = 1000
+SEED = 42
+SHARE_BINS = [0, 0.1, 0.2, 0.35, 0.5, 1.0]
+
+
+def load():
+    scores = pd.read_csv(f"{OUT}/indirect_test_scores.csv")
+    docs = pd.read_csv("data/indirect/test.csv")
+    assert (scores.doc_id.values == docs.doc_id.values).all()
+    scores["share"] = np.where(docs.label == 1, docs.payload.fillna("").str.len() / docs.text.str.len(), np.nan)
+    return scores
+
+
+def dilution(df, models):
+    inj = df[df.label == 1].copy()
+    inj["share_bin"] = pd.cut(inj.share, SHARE_BINS, include_lowest=True)
+    rows = []
+    for (b, g) in inj.groupby("share_bin", observed=True):
+        for m in models:
+            for mode in ["doc", "chunk"]:
+                rows.append({"share_bin": str(b), "share_mid": g.share.median(), "n": len(g), "model": m,
+                             "mode": mode, "recall": float((g[f"p_{m}_{mode}"] >= THRESHOLD).mean())})
+    return pd.DataFrame(rows)
+
+
+def fig_dilution(d, models):
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+    colors = {"tfidf": "#c0392b", "embedding": "#2b5d8a", "distilbert": "#2b6a4f"}
+    for ax, suffix, title in [(axes[0], "", "Direct-trained models"), (axes[1], "_ind", "Indirect-trained models")]:
+        for fam, color in colors.items():
+            m = fam + suffix
+            if m not in models or m == "distilbert":  # direct DistilBERT flags most benign docs; recall is not meaningful
+                continue
+            for mode, ls in [("doc", "--"), ("chunk", "-")]:
+                g = d[(d.model == m) & (d["mode"] == mode)].sort_values("share_mid")
+                ax.plot(g.share_mid, g.recall, ls, marker="o", color=color, ms=4,
+                        label=f"{MODEL_LABELS[fam]} ({'whole doc' if mode == 'doc' else 'windows'})")
+        ax.set_title(title, fontsize=10)
+        ax.set_xlabel("Payload share of the document (characters)", fontsize=9)
+        ax.set_ylim(0, 1.05)
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.legend(fontsize=7, frameon=False, loc="lower right")
+    axes[0].set_ylabel("Recall", fontsize=9)
+    axes[0].text(0.02, 0.97, "Direct-trained DistilBERT omitted: it flags 85-90% of\nbenign documents, so its recall is not meaningful here",
+                 transform=axes[0].transAxes, fontsize=7, va="top", color="#555")
+    fig.suptitle("Dilution: recall vs. how much of the document the injection fills (indirect test, 400 injected docs)",
+                 fontsize=10)
+    fig.tight_layout()
+    fig.savefig(f"{OUT}/fig_dilution.png", dpi=200)
+    plt.close(fig)
+
+
+def _metrics(y, pred):
+    tp = np.sum((pred == 1) & (y == 1)); fp = np.sum((pred == 1) & (y == 0))
+    fn = np.sum((pred == 0) & (y == 1)); tn = np.sum((pred == 0) & (y == 0))
+    p = tp / (tp + fp) if tp + fp else 0.0
+    r = tp / (tp + fn) if tp + fn else 0.0
+    f = 2 * p * r / (p + r) if p + r else 0.0
+    return p, r, f, fp / (fp + tn) if fp + tn else np.nan
+
+
+def bootstrap(df, models):
+    rng = np.random.default_rng(SEED)
+    y = df.label.values
+    idx = rng.integers(0, len(y), size=(N_BOOT, len(y)))
+    rows = []
+    for m in models:
+        for mode in ["doc", "chunk", "chunk_decode"]:
+            col = f"p_{m}_{mode}"
+            if col not in df:
+                continue
+            pred = (df[col].values >= THRESHOLD).astype(int)
+            point = _metrics(y, pred)
+            boots = np.array([_metrics(y[i], pred[i]) for i in idx])
+            for k, name in enumerate(["precision", "recall", "f1", "fpr"]):
+                lo, hi = np.nanpercentile(boots[:, k], [2.5, 97.5])
+                rows.append({"model": m, "mode": mode, "metric": name, "value": point[k], "ci_low": lo, "ci_high": hi})
+    return pd.DataFrame(rows)
+
+
+def main():
+    df = load()
+    models = [m for m in MODEL_ORDER if f"p_{m}_doc" in df]
+    d = dilution(df, models)
+    d.to_csv(f"{OUT}/dilution.csv", index=False)
+    fig_dilution(d, models)
+    ci = bootstrap(df, models)
+    ci.to_csv(f"{OUT}/bootstrap_ci.csv", index=False)
+
+    lines = ["# Indirect test: dilution and confidence intervals", "",
+             "Generated by `python -m scripts.analysis_indirect` from per-document scores.", "",
+             "## Recall by payload share of the document", ""]
+    piv = d.pivot_table(index=["share_bin", "n"], columns=["model", "mode"], values="recall")
+    piv.columns = [f"{MODEL_LABELS[m]} [{md}]" for m, md in piv.columns]
+    try:
+        lines.append(piv.round(3).to_markdown())
+    except ImportError:  # tabulate not installed
+        lines.append(piv.round(3).to_string())
+    lines += ["", "## 95% bootstrap confidence intervals (1,000 resamples)", ""]
+    c = ci[ci["mode"] != "chunk_decode"].copy()
+    c["ci"] = [f"{v:.3f} [{lo:.3f}, {hi:.3f}]" for v, lo, hi in zip(c.value, c.ci_low, c.ci_high)]
+    t = c.pivot_table(index=["model", "mode"], columns="metric", values="ci", aggfunc="first").reset_index()
+    t["model"] = t.model.map(MODEL_LABELS)
+    lines.append(t[["model", "mode", "precision", "recall", "f1", "fpr"]].to_string(index=False))
+    with open(f"{OUT}/analysis.md", "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print("\n".join(lines))
+
+
+if __name__ == "__main__":
+    main()
